@@ -1,0 +1,227 @@
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+image:
+  registry: ""
+  repository: kafka/kafka
+  pullPolicy: IfNotPresent
+  pullSecrets: []
+
+broker:
+  baseId: 0
+  replicas: 3
+  port: 9092
+  properties:
+    listener:
+      security:
+        protocol:
+          map:
+            - CONTROLLER:PLAINTEXT
+            - PLAINTEXT:PLAINTEXT
+            - SSL:SSL
+            - SASL_PLAINTEXT:SASL_PLAINTEXT
+            - SASL_SSL:SASL_SSL
+
+controller:
+  baseId: 10
+  replicas: 3
+  port: 9093
+  properties: {}
+
+properties:
+  num:
+    network:
+      # The number of threads that the server uses for receiving requests from the network and sending responses to the network
+      threads: 3
+    io:
+      # The number of threads that the server uses for processing requests, which may include disk I/O
+      threads: 8
+    # The default number of log partitions per topic. More partitions allow greater
+    # parallelism for consumption, but this will also result in more files across
+    # the brokers.
+    partitions: 1
+    # The number of threads per data directory to be used for log recovery at startup and flushing at shutdown.
+    # This value is recommended to be increased for installations with data dirs located in RAID array.
+    recovery:
+      threads:
+        per:
+          data:
+            dir: 1
+  socket:
+    # The send buffer (SO_SNDBUF) used by the socket server
+    send:
+      buffer:
+        bytes: 102400
+    # The receive buffer (SO_RCVBUF) used by the socket server
+    receive:
+      buffer:
+        bytes: 102400
+    # The maximum size of a request that the socket server will accept (protection against OOM)
+    request:
+      max:
+        bytes: 104857600
+
+  # The replication factor for the group metadata internal topics "__consumer_offsets" and "__transaction_state"
+  # For anything other than development testing, a value greater than 1 is recommended to ensure availability such as 3.
+  offsets:
+    topic:
+      replication:
+        factor: 1
+  transaction:
+    state:
+      log:
+        replication:
+          factor: 1
+        min:
+          isr: 1
+
+  log:
+  #   flush:
+  #     interval:
+  #       # The number of messages to accept before forcing a flush of data to disk
+  #       messages: 10000
+  #       # The maximum amount of time a message can sit in a log before we force a flush
+  #       ms: 1000
+
+    # The minimum age of a log file to be eligible for deletion due to age
+    retention:
+      hours: 168
+      # The interval at which log segments are checked to see if they can be deleted according
+      # to the retention policies
+      check:
+        interval:
+          ms: 300000
+    # The maximum size of a log segment file. When this size is reached a new log segment will be created.
+    segment:
+      bytes: 1073741824
+
+logging:
+  brokerLogLevel: "WARN"
+  controllerLogLevel: "WARN"
+  requestLogLevel: "WARN"
+  requestChannelLogLevel: "WARN"
+  logCleanerLogLevel: "INFO"
+  stateChangeLogLevel: "INFO"
+  authorizerLogLevel: "INFO"
+  toolsLogLevel: "WARN"
+  rootLogger: "INFO, stdout, kafkaAppender"
+  datePattern: "'.'yyyy-MM-dd-HH"
+  appenderLayout:
+    type: org.apache.log4j.PatternLayout
+    conversionPattern: "[%d] %p %m (%c)%n"
+  appenders:
+    stdout:
+      type: org.apache.log4j.ConsoleAppender
+    kafkaAppender:
+      type: org.apache.log4j.DailyRollingFileAppender
+      file: ${kafka.logs.dir}/server.log
+    stateChangeAppender:
+      type: org.apache.log4j.DailyRollingFileAppender
+      file: ${kafka.logs.dir}/state-change.log
+    requestAppender:
+      type: org.apache.log4j.DailyRollingFileAppender
+      file: ${kafka.logs.dir}/kafka-request.log
+    cleanerAppender:
+      type: org.apache.log4j.DailyRollingFileAppender
+      file: ${kafka.logs.dir}/log-cleaner.log
+    controllerAppender:
+      type: org.apache.log4j.DailyRollingFileAppender
+      file: ${kafka.logs.dir}/controller.log
+    authorizerAppender:
+      type: org.apache.log4j.DailyRollingFileAppender
+      file: ${kafka.logs.dir}/kafka-authorizer.log
+
+toolLogging:
+  rootLogger: "WARN, stderr"
+  datePattern: "'.'yyyy-MM-dd-HH"
+  appenderLayout:
+    type: org.apache.log4j.PatternLayout
+    conversionPattern: "[%d] %p %m (%c)%n"
+  appenders:
+    stderr:
+      type: org.apache.log4j.ConsoleAppender
+      target: System.err
+
+nameOverride: ""
+fullnameOverride: ""
+
+logDirCapacity: "1Gi"
+
+# Storage class to use for the kafka logs.
+storageClassName: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+service:
+  type: ClusterIP
+  port: 80
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+  hosts:
+    - host: chart-example.local
+      paths:
+        - path: /
+          pathtype: ImplementationSpecific
+  tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+kafka:
+  partitions: 6    # The default number of log partitions per topic.
+  threadsPerDir: 1 # The number of threads per data directory to be used for log recovery at startup and flushing at shutdown.
