@@ -41,7 +41,7 @@ spec:
         app.kubernetes.io/component: "controller"
         {{- include "kafka.selectorLabels" . | nindent 8 }}
     spec:
-      {{- if not .Values.serviceAcount.create }}
+      {{- if not .Values.serviceAccount.create }}
       {{- with .Values.image.pullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
@@ -60,6 +60,8 @@ spec:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: {{ include "kafka.image" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command:
+            - /etc/kafka/docker/k8s_launch
           args:
             - -r
             - controller

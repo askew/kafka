@@ -16,13 +16,10 @@ limitations under the License.
 */ -}}
 
 {{ if .Release.IsInstall }}
-🚀 Welcome to {{ .Chart.Name }} {{ .Chart.AppVersion }}! 🎉
+🚀 Welcome to {{ .Chart.Name }} {{ .Chart.AppVersion }}!
 {{ else if .Release.IsUpgrade }}
-🔄 {{ .Chart.Name }} upgraded to {{ .Chart.AppVersion }} successfully! 🎉
+🔄 {{ .Chart.Name }} upgraded to {{ .Chart.AppVersion }} successfully!
 {{ end }}
 
-To access your Kafka deployment, follow these steps:
-1. Kafka Broker:
-
-    kubectl get svc -n kafka
-    kubectl port-forward svc/<kafka svc> 9092:9092
+The Kafka bootstrap servers list is:
+{{ include "kafka.brokerUrls" . }}

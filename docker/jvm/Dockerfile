@@ -85,7 +85,7 @@ RUN set -eux ; \
 
 COPY --from=build-jsa kafka.jsa storage.jsa /opt/kafka/
 COPY --from=resources --chown=appuser:appuser common-scripts /etc/kafka/docker
-COPY --chown=appuser:appuser launch k8s_launch /etc/kafka/docker/
+COPY --chown=appuser:appuser --chmod=755 launch k8s_launch /etc/kafka/docker/
 
 USER appuser
 

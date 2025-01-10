@@ -15,7 +15,7 @@
 
 image:
   registry: ""
-  repository: kafka/kafka
+  repository: apache/kafka
   pullPolicy: IfNotPresent
   pullSecrets: []
 

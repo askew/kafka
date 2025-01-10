@@ -27,6 +27,7 @@ function usage()
 declare ROLE=${ROLE:-server}
 declare -i BASE_ID=${BASE_ID:-0}
 declare CLUSTER_ID
+declare -r KAFKA_ROOT=/opt/kafka
 
 while getopts ":b:i:r:h" arg; do
 	case "${arg}" in
@@ -52,13 +53,13 @@ function format_storage() {
   local perfOpts="${KAFKA_JVM_PERFORMANCE_OPTS:-}"
 
   # We will first use CDS for storage to format storage
-  export KAFKA_JVM_PERFORMANCE_OPTS="${perfOpts} -XX:SharedArchiveFile=/opt/kafka/storage.jsa"
+  export KAFKA_JVM_PERFORMANCE_OPTS="${perfOpts} -XX:SharedArchiveFile=${KAFKA_ROOT}/storage.jsa"
 
   if [[ "${clusterId}" ]]; then
     # Format Log Directories with the cluster id
-    bin/kafka-storage.sh format -t "${clusterId}" -c config/kafka.properties --ignore-formatted
+    ${KAFKA_ROOT}/bin/kafka-storage.sh format -t "${clusterId}" -c ${KAFKA_ROOT}/config/kafka.properties --ignore-formatted
   else
-    CLUSTER_ID=$(bin/kafka-storage.sh random-uuid)
+    CLUSTER_ID=$(${KAFKA_ROOT}/bin/kafka-storage.sh random-uuid)
     echo $CLUSTER_ID > /mnt/kafka/cluster_id
   fi
 
@@ -75,12 +76,12 @@ function create_log_dir() {
 function copy_config_files() {
     if [ -d /mnt/config ]; then
         # Clear out the default properties files.
-        rm -rf /opt/kafka/config/*
+        rm -rf ${KAFKA_ROOT}/config/*
         # Copy the log4j properties files to the local folder.
-        cp -rL /mnt/config/*log4j* /opt/kafka/config
+        cp -rL /mnt/config/*log4j* ${KAFKA_ROOT}/config
         # Copy the role specific properties files to the local folder.
         echo "Using property file /mnt/config/${ROLE@L}-${POD_ID}.properties"
-        cp -L /mnt/config/${ROLE@L}-${POD_ID}.properties /opt/kafka/config/kafka.properties
+        cp -L /mnt/config/${ROLE@L}-${POD_ID}.properties ${KAFKA_ROOT}/config/kafka.properties
     fi
 }
 
@@ -103,5 +104,6 @@ copy_config_files
 format_storage "$(get_cluster_id)"
 
 # Start the Kafka Server
-export KAFKA_JVM_PERFORMANCE_OPTS="${KAFKA_JVM_PERFORMANCE_OPTS:-} -XX:SharedArchiveFile=/opt/kafka/kafka.jsa"
-bin/kafka-server-start.sh config/kafka.properties
+export KAFKA_JVM_PERFORMANCE_OPTS="${KAFKA_JVM_PERFORMANCE_OPTS:-} -XX:SharedArchiveFile=${KAFKA_ROOT}/kafka.jsa"
+
+exec ${KAFKA_ROOT}/bin/kafka-server-start.sh ${KAFKA_ROOT}/config/kafka.properties
